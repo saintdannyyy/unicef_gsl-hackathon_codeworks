@@ -1,0 +1,19 @@
+# Python 3.10.x compatible versions
+# Install with: pip install -r requirements.txt
+
+# Core ML/Data Processing
+tensorflow==2.15.0
+tensorflowjs==4.18.0
+numpy==1.26.4
+scikit-learn==1.5.1
+
+# Web Server
+flask==3.0.3
+flask-cors==4.0.1
+
+# Data Handling
+pandas==2.2.2
+h5py==3.11.0
+
+# Utilities
+Pillow==10.4.0

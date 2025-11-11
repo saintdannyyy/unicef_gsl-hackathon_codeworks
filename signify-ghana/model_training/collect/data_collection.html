@@ -1,0 +1,300 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>GSL Data Collector</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.0.0/dist/tf.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        input {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        #startBtn {
+            background: #10b981;
+            color: white;
+        }
+
+        #captureBtn {
+            background: #667eea;
+            color: white;
+        }
+
+        .video-container {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+
+        video,
+        canvas {
+            width: 480px;
+            height: 360px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .stats {
+            background: #f0f9ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .instructions {
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .instructions h4 {
+            margin-top: 0;
+            color: #92400e;
+        }
+
+        .instructions ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin: 5px 0;
+            color: #78350f;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h3>🇬🇭 GSL Data Collector</h3>
+
+        <div class="instructions">
+            <h4>📋 Instructions:</h4>
+            <ul>
+                <li>Enter the sign label (e.g., A, B, Hello, Thank you)</li>
+                <li>Click "Start Camera" to begin</li>
+                <li>Position your hand clearly in the camera frame</li>
+                <li>Click "Capture Sample" to record the hand landmarks</li>
+                <li>Collect 30-50 samples per sign for best results</li>
+            </ul>
+        </div>
+
+        <div class="controls">
+            <label>Class label: <input id="label" placeholder="e.g., A, B, 1, hello" /></label>
+            <button id="startBtn">Start Camera</button>
+            <button id="captureBtn">Capture Sample</button>
+        </div>
+
+        <div class="video-container">
+            <video id="video" autoplay muted playsinline></video>
+            <canvas id="out"></canvas>
+        </div>
+
+        <div class="stats">
+            Captured <span id="count">0</span> samples for current label
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const out = document.getElementById('out');
+        const ctx = out.getContext('2d');
+        let sampleCount = 0;
+        let currentLabel = '';
+
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480 }
+                });
+                video.srcObject = stream;
+                await video.play();
+                out.width = video.videoWidth;
+                out.height = video.videoHeight;
+            } catch (err) {
+                alert('Camera access denied: ' + err.message);
+            }
+        }
+
+        document.getElementById('startBtn').onclick = startCamera;
+
+        // Initialize MediaPipe Hands
+        const hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.6,
+            minTrackingConfidence: 0.6
+        });
+
+        hands.onResults(onResults);
+
+        // Camera loop
+        const camera = new Camera(video, {
+            onFrame: async () => {
+                await hands.send({ image: video });
+            },
+            width: 640,
+            height: 480
+        });
+
+        document.getElementById('startBtn').addEventListener('click', () => camera.start());
+
+        function onResults(results) {
+            ctx.save();
+            ctx.clearRect(0, 0, out.width, out.height);
+            ctx.drawImage(results.image, 0, 0, out.width, out.height);
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length) {
+                const lm = results.multiHandLandmarks[0];
+
+                // Draw hand connections
+                ctx.strokeStyle = '#00FF00';
+                ctx.lineWidth = 2;
+                drawConnections(ctx, lm);
+
+                // Draw landmarks as circles
+                ctx.fillStyle = 'red';
+                for (let p of lm) {
+                    ctx.beginPath();
+                    ctx.arc(p.x * out.width, p.y * out.height, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Store last landmarks for capture (normalized x, y, z)
+                window.lastLandmarks = lm.map(p => [p.x, p.y, p.z]);
+            }
+
+            ctx.restore();
+        }
+
+        // Draw hand skeleton connections
+        function drawConnections(ctx, landmarks) {
+            const connections = [
+                [0, 1], [1, 2], [2, 3], [3, 4],      // Thumb
+                [0, 5], [5, 6], [6, 7], [7, 8],      // Index
+                [0, 9], [9, 10], [10, 11], [11, 12], // Middle
+                [0, 13], [13, 14], [14, 15], [15, 16], // Ring
+                [0, 17], [17, 18], [18, 19], [19, 20], // Pinky
+                [5, 9], [9, 13], [13, 17]          // Palm
+            ];
+
+            connections.forEach(([start, end]) => {
+                const p1 = landmarks[start];
+                const p2 = landmarks[end];
+                ctx.beginPath();
+                ctx.moveTo(p1.x * out.width, p1.y * out.height);
+                ctx.lineTo(p2.x * out.width, p2.y * out.height);
+                ctx.stroke();
+            });
+        }
+
+        // Capture button handler
+        document.getElementById('captureBtn').onclick = async () => {
+            const label = document.getElementById('label').value.trim();
+
+            if (!label) {
+                alert('Please enter a label');
+                return;
+            }
+
+            if (!window.lastLandmarks) {
+                alert('No hand detected. Please show your hand to the camera.');
+                return;
+            }
+
+            // Reset counter if label changed
+            if (currentLabel !== label) {
+                currentLabel = label;
+                sampleCount = 0;
+            }
+
+            // Flatten landmarks to 63-dim vector
+            const sample = {
+                label,
+                landmarks: window.lastLandmarks.flat()
+            };
+
+            // POST to server
+            try {
+                const response = await fetch('/upload_sample', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(sample)
+                });
+
+                if (response.ok) {
+                    sampleCount++;
+                    document.getElementById('count').innerText = sampleCount;
+                } else {
+                    alert('Failed to upload sample');
+                }
+            } catch (err) {
+                alert('Server error: ' + err.message);
+            }
+        };
+    </script>
+</body>
+
+</html>

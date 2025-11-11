@@ -1,0 +1,64 @@
+{
+  "format": "layers-model",
+  "generatedBy": "TensorFlow Python",
+  "convertedBy": "Signify Ghana",
+  "modelTopology": {
+    "class_name": "Sequential",
+    "config": {}
+  },
+  "weightsManifest": [
+    {
+      "paths": [
+        "group1-shard1of1.bin"
+      ],
+      "weights": [
+        {
+          "name": "dense_1_w0",
+          "shape": [
+            63,
+            128
+          ],
+          "dtype": "float32"
+        },
+        {
+          "name": "dense_1_w1",
+          "shape": [
+            128
+          ],
+          "dtype": "float32"
+        },
+        {
+          "name": "dense_2_w0",
+          "shape": [
+            128,
+            64
+          ],
+          "dtype": "float32"
+        },
+        {
+          "name": "dense_2_w1",
+          "shape": [
+            64
+          ],
+          "dtype": "float32"
+        },
+        {
+          "name": "output_w0",
+          "shape": [
+            64,
+            37
+          ],
+          "dtype": "float32"
+        },
+        {
+          "name": "output_w1",
+          "shape": [
+            37
+          ],
+          "dtype": "float32"
+        }
+      ]
+    }
+  ],
+  "trainingConfig": {}
+}

@@ -1,127 +1,157 @@
 // WebcamDetector - MediaPipe Hands + TF.js inference component
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Hands } from "@mediapipe/hands";
 import { Camera } from "@mediapipe/camera_utils";
-import * as tf from "@tensorflow/tfjs";
-import { loadSignModel, predictSign } from "../utils/modelLoader";
-
-const CONFIDENCE_THRESHOLD = 0.6;
-const MODEL_PATH = "/assets/web_model/model.json";
-const LABELS_PATH = "/labels.json";
+import { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils";
+import { HAND_CONNECTIONS } from "@mediapipe/hands";
+import {
+  loadSignModel,
+  SequenceBuffer,
+  preprocessHandLandmarks,
+  predictSign,
+} from "../utils/modelLoader";
 
 export default function WebcamDetector() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  const cameraRef = useRef(null);
-  const handsRef = useRef(null);
-  const modelRef = useRef(null);
-
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRunning, setIsRunning] = useState(false);
-  const [prediction, setPrediction] = useState(null);
-  const [labels, setLabels] = useState([]);
-  const [error, setError] = useState(null);
   const [model, setModel] = useState(null);
+  const [labels, setLabels] = useState([]);
+  const [prediction, setPrediction] = useState(null);
+  const [error, setError] = useState(null);
+  const [isRunning, setIsRunning] = useState(false);
+  const [fps, setFps] = useState(0);
 
-  // Load model and labels on mount
+  const handsRef = useRef(null);
+  const cameraRef = useRef(null);
+  const sequenceBufferRef = useRef(new SequenceBuffer(30));
+  const lastPredictionTimeRef = useRef(0);
+  const frameCountRef = useRef(0);
+  const fpsIntervalRef = useRef(null);
+
+  // Load model and labels
   useEffect(() => {
     const initializeModel = async () => {
       try {
-        const model = await loadSignModel();
-        setModel(model);
-        console.log("✅ Model initialized");
+        console.log("🔧 Initializing model...");
+        const loadedModel = await loadSignModel();
+        setModel(loadedModel);
+
+        console.log("📋 Loading labels...");
+        const response = await fetch("/labels.json");
+        const loadedLabels = await response.json();
+        setLabels(loadedLabels);
+
+        console.log(`✅ Ready! ${loadedLabels.length} signs loaded`);
       } catch (error) {
         console.error("❌ Model init failed:", error);
-        setError(`Model loading failed: ${error.message}`);
+        setError(`Failed to initialize: ${error.message}`);
       }
     };
 
     initializeModel();
-
-    return () => {
-      // Cleanup on unmount
-      stopCamera();
-      if (modelRef.current) {
-        modelRef.current.dispose();
-      }
-    };
   }, []);
 
-  const loadModelAndLabels = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  // Initialize MediaPipe Hands
+  useEffect(() => {
+    if (!model || !labels.length) return;
 
-      // Load labels first
-      const labelsResponse = await fetch(LABELS_PATH);
-      if (!labelsResponse.ok) {
-        throw new Error("Labels file not found. Train the model first.");
+    const hands = new Hands({
+      locateFile: (file) =>
+        `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+    });
+
+    hands.setOptions({
+      maxNumHands: 1,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.7,
+      minTrackingConfidence: 0.7,
+    });
+
+    hands.onResults(onResults);
+    handsRef.current = hands;
+
+    // Start FPS counter
+    fpsIntervalRef.current = setInterval(() => {
+      setFps(frameCountRef.current);
+      frameCountRef.current = 0;
+    }, 1000);
+
+    return () => {
+      if (fpsIntervalRef.current) {
+        clearInterval(fpsIntervalRef.current);
       }
-      const labelsData = await labelsResponse.json();
-      setLabels(labelsData);
+    };
+  }, [model, labels]);
 
-      // Load TF.js model
-      const model = await tf.loadLayersModel(MODEL_PATH);
-      modelRef.current = model;
+  const onResults = async (results) => {
+    frameCountRef.current++;
 
-      console.log("✅ Model loaded:", model);
-      console.log("✅ Labels loaded:", labelsData);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-      setIsLoading(false);
-    } catch (err) {
-      console.error("Model loading error:", err);
-      setError(`Failed to load model: ${err.message}`);
-      setIsLoading(false);
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+
+    if (results.multiHandLandmarks && results.multiHandLandmarks[0]) {
+      const landmarks = results.multiHandLandmarks[0];
+
+      // Draw hand skeleton
+      drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {
+        color: "#00FF00",
+        lineWidth: 3,
+      });
+      drawLandmarks(ctx, landmarks, {
+        color: "#FF0000",
+        lineWidth: 2,
+        radius: 5,
+      });
+
+      // Convert to flat array
+      const flatLandmarks = preprocessHandLandmarks(landmarks);
+
+      if (flatLandmarks) {
+        // Add to sequence buffer
+        sequenceBufferRef.current.addFrame(flatLandmarks);
+
+        // Predict every 500ms (2 predictions per second)
+        const now = Date.now();
+        if (now - lastPredictionTimeRef.current > 500) {
+          lastPredictionTimeRef.current = now;
+
+          const result = await predictSign(
+            model,
+            sequenceBufferRef.current,
+            labels
+          );
+
+          if (result && result.confidence > 60) {
+            setPrediction(result);
+
+            // Text-to-speech
+            if ("speechSynthesis" in window) {
+              window.speechSynthesis.cancel();
+              const utterance = new SpeechSynthesisUtterance(result.label);
+              utterance.rate = 0.9;
+              window.speechSynthesis.speak(utterance);
+            }
+          }
+        }
+      }
+    } else {
+      // No hand detected - clear buffer after 2 seconds
+      const now = Date.now();
+      if (now - lastPredictionTimeRef.current > 2000) {
+        sequenceBufferRef.current.clear();
+        setPrediction(null);
+      }
     }
   };
 
   const startCamera = async () => {
-    if (!modelRef.current || !labels.length) {
-      setError("Model not ready. Please refresh the page.");
-      return;
-    }
+    if (!videoRef.current || !handsRef.current) return;
 
     try {
-      setError(null);
-
-      // Request camera permission
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: 640,
-          height: 480,
-          facingMode: "user",
-        },
-      });
-
-      if (!videoRef.current) return;
-
-      videoRef.current.srcObject = stream;
-      await videoRef.current.play();
-
-      // Set canvas dimensions
-      if (canvasRef.current) {
-        canvasRef.current.width = 640;
-        canvasRef.current.height = 480;
-      }
-
-      // Initialize MediaPipe Hands
-      const hands = new Hands({
-        locateFile: (file) => {
-          return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-        },
-      });
-
-      hands.setOptions({
-        maxNumHands: 1,
-        modelComplexity: 1,
-        minDetectionConfidence: 0.7,
-        minTrackingConfidence: 0.7,
-      });
-
-      hands.onResults(onHandsResults);
-      handsRef.current = hands;
-
-      // Start camera loop
       const camera = new Camera(videoRef.current, {
         onFrame: async () => {
           if (handsRef.current && videoRef.current) {
@@ -132,12 +162,13 @@ export default function WebcamDetector() {
         height: 480,
       });
 
+      await camera.start();
       cameraRef.current = camera;
-      camera.start();
       setIsRunning(true);
-    } catch (err) {
-      console.error("Camera error:", err);
-      setError(`Camera access denied: ${err.message}`);
+      console.log("✅ Camera started");
+    } catch (error) {
+      console.error("❌ Camera error:", error);
+      setError(`Camera failed: ${error.message}`);
     }
   };
 
@@ -146,223 +177,146 @@ export default function WebcamDetector() {
       cameraRef.current.stop();
       cameraRef.current = null;
     }
-
-    if (videoRef.current?.srcObject) {
-      const tracks = videoRef.current.srcObject.getTracks();
-      tracks.forEach((track) => track.stop());
-      videoRef.current.srcObject = null;
-    }
-
     setIsRunning(false);
+    sequenceBufferRef.current.clear();
     setPrediction(null);
   };
 
-  const onHandsResults = useCallback(
-    (results) => {
-      if (!canvasRef.current) return;
-
-      const ctx = canvasRef.current.getContext("2d");
-      if (!ctx) return;
-
-      // Clear and draw video frame
-      ctx.save();
-      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-      ctx.drawImage(
-        results.image,
-        0,
-        0,
-        canvasRef.current.width,
-        canvasRef.current.height
-      );
-
-      // Draw hand landmarks if detected
-      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-        const landmarks = results.multiHandLandmarks[0];
-
-        // Draw connections
-        ctx.strokeStyle = "#00FF00";
-        ctx.lineWidth = 2;
-        drawHandConnections(ctx, landmarks);
-
-        // Draw landmarks as circles
-        ctx.fillStyle = "#FF0000";
-        landmarks.forEach((point) => {
-          ctx.beginPath();
-          ctx.arc(
-            point.x * canvasRef.current.width,
-            point.y * canvasRef.current.height,
-            5,
-            0,
-            Math.PI * 2
-          );
-          ctx.fill();
-        });
-
-        // Run prediction
-        handlePrediction(landmarks);
-      } else {
-        // No hand detected - clear prediction
-        setPrediction(null);
-      }
-
-      ctx.restore();
-    },
-    [labels]
-  );
-
-  const drawHandConnections = (ctx, landmarks) => {
-    // Hand skeleton connections (MediaPipe hand model)
-    const connections = [
-      [0, 1],
-      [1, 2],
-      [2, 3],
-      [3, 4], // Thumb
-      [0, 5],
-      [5, 6],
-      [6, 7],
-      [7, 8], // Index
-      [0, 9],
-      [9, 10],
-      [10, 11],
-      [11, 12], // Middle
-      [0, 13],
-      [13, 14],
-      [14, 15],
-      [15, 16], // Ring
-      [0, 17],
-      [17, 18],
-      [18, 19],
-      [19, 20], // Pinky
-      [5, 9],
-      [9, 13],
-      [13, 17], // Palm
-    ];
-
-    connections.forEach(([start, end]) => {
-      const p1 = landmarks[start];
-      const p2 = landmarks[end];
-      ctx.beginPath();
-      ctx.moveTo(
-        p1.x * canvasRef.current.width,
-        p1.y * canvasRef.current.height
-      );
-      ctx.lineTo(
-        p2.x * canvasRef.current.width,
-        p2.y * canvasRef.current.height
-      );
-      ctx.stroke();
-    });
-  };
-
-  const handlePrediction = async (landmarks) => {
-    if (!model || !labels) return;
-
-    const result = await predictSign(model, landmarks, labels);
-    if (result) {
-      setPrediction(result);
-      // Speak the prediction
-      if ("speechSynthesis" in window) {
-        const utterance = new SpeechSynthesisUtterance(result.label);
-        window.speechSynthesis.speak(utterance);
-      }
-    }
-  };
-
-  // Auto-speak on new prediction (TTS)
-  useEffect(() => {
-    if (prediction && window.speechSynthesis) {
-      // Cancel any ongoing speech
-      window.speechSynthesis.cancel();
-
-      const utterance = new SpeechSynthesisUtterance(prediction.label);
-      utterance.lang = "en-US";
-      utterance.rate = 0.9;
-      utterance.volume = 0.8;
-      window.speechSynthesis.speak(utterance);
-    }
-  }, [prediction?.label]); // Only trigger on label change
-
-  const speakAgain = () => {
-    if (!prediction) return;
-
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(prediction.label);
-    utterance.lang = "en-US";
-    utterance.rate = 0.9;
-    window.speechSynthesis.speak(utterance);
-  };
-
   return (
-    <div className="webcam-detector">
-      {isLoading && (
-        <div className="loading-state">
-          <div className="spinner"></div>
-          <p>Loading AI model...</p>
-        </div>
-      )}
+    <div style={{ padding: "20px", maxWidth: "1200px", margin: "0 auto" }}>
+      <h2 style={{ marginBottom: "20px" }}>🇬🇭 GSL Sign Detection</h2>
 
       {error && (
-        <div className="error-state">
-          <p>⚠️ {error}</p>
-          <button onClick={loadModelAndLabels} className="btn-secondary">
-            Retry
-          </button>
+        <div
+          style={{
+            background: "#fee",
+            border: "2px solid #c00",
+            padding: "15px",
+            borderRadius: "8px",
+            marginBottom: "20px",
+          }}
+        >
+          ❌ {error}
         </div>
       )}
 
-      {!isLoading && !error && (
-        <>
-          <div className="camera-section">
-            <div className="camera-container">
-              <video ref={videoRef} style={{ display: "none" }} />
-              <canvas ref={canvasRef} className="camera-canvas" />
-              {!isRunning && (
-                <div className="camera-overlay">
-                  <p>Camera not started</p>
-                </div>
-              )}
-            </div>
+      <div style={{ marginBottom: "20px" }}>
+        {!isRunning ? (
+          <button
+            onClick={startCamera}
+            disabled={!model || !labels.length}
+            style={{
+              padding: "12px 24px",
+              fontSize: "16px",
+              background: "#28a745",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+            }}
+          >
+            📹 Start Camera
+          </button>
+        ) : (
+          <button
+            onClick={stopCamera}
+            style={{
+              padding: "12px 24px",
+              fontSize: "16px",
+              background: "#dc3545",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+            }}
+          >
+            ⏹️ Stop Camera
+          </button>
+        )}
 
-            <div className="controls">
-              {!isRunning ? (
-                <button onClick={startCamera} className="btn-primary btn-large">
-                  📹 Start Camera
-                </button>
-              ) : (
-                <button onClick={stopCamera} className="btn-danger btn-large">
-                  ⏹️ Stop Camera
-                </button>
-              )}
-            </div>
-          </div>
+        <span style={{ marginLeft: "20px", color: "#666" }}>
+          FPS: {fps} | Buffer: {sequenceBufferRef.current.buffer.length}/30
+        </span>
+      </div>
 
-          <div className="prediction-section">
-            <h3>Recognition Result</h3>
-            {prediction ? (
-              <div className="prediction-card active">
-                <div className="prediction-label">{prediction.label}</div>
-                <div className="prediction-confidence">
-                  Confidence: {(prediction.confidence * 100).toFixed(1)}%
-                </div>
-                <button onClick={speakAgain} className="btn-secondary">
-                  🔊 Speak Again
-                </button>
-              </div>
-            ) : (
-              <div className="prediction-card empty">
-                <p>Show a sign to the camera</p>
-                {labels.length > 0 && (
-                  <div className="prediction-hint">
-                    <strong>Available signs:</strong>
-                    <br />
-                    {labels.join(", ")}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </>
+      <div
+        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}
+      >
+        <div>
+          <h3>Camera Feed</h3>
+          <video
+            ref={videoRef}
+            style={{
+              width: "100%",
+              border: "3px solid #333",
+              borderRadius: "8px",
+            }}
+          />
+        </div>
+
+        <div>
+          <h3>Hand Detection</h3>
+          <canvas
+            ref={canvasRef}
+            width={640}
+            height={480}
+            style={{
+              width: "100%",
+              border: "3px solid #28a745",
+              borderRadius: "8px",
+            }}
+          />
+        </div>
+      </div>
+
+      {prediction && (
+        <div
+          style={{
+            marginTop: "20px",
+            padding: "20px",
+            background: "#d4edda",
+            border: "2px solid #28a745",
+            borderRadius: "8px",
+          }}
+        >
+          <h2 style={{ margin: "0 0 10px 0", color: "#155724" }}>
+            Sign: {prediction.label}
+          </h2>
+          <p style={{ margin: "5px 0", fontSize: "18px" }}>
+            Confidence: {prediction.confidence}%
+          </p>
+
+          {prediction.top3 && (
+            <div style={{ marginTop: "15px" }}>
+              <strong>Top 3 Predictions:</strong>
+              <ol style={{ marginTop: "5px" }}>
+                {prediction.top3.map((item, idx) => (
+                  <li key={idx}>
+                    {item.label}: {item.confidence}%
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+        </div>
       )}
+
+      <div
+        style={{
+          marginTop: "20px",
+          padding: "15px",
+          background: "#f8f9fa",
+          borderRadius: "8px",
+        }}
+      >
+        <h4>💡 Tips:</h4>
+        <ul>
+          <li>Keep your hand clearly visible in the camera</li>
+          <li>For dynamic signs (Z, J), perform the full motion</li>
+          <li>Model processes 30 frames (~2 seconds) for each prediction</li>
+          <li>Wait for confidence above 60% for reliable results</li>
+        </ul>
+      </div>
     </div>
   );
 }

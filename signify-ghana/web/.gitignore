@@ -1,3 +1,4 @@
 node_modules/
 .vscode/
-../model_training/venv/
+public/assets/web_model/
+public/labels.json

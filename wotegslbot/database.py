@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import List, Dict, Optional
 import difflib
-from config import CATEGORIES, DICTIONARY_FILE, SUPPORTED_VIDEO_FORMATS
+from config import CATEGORIES, DICTIONARY_FILE, SUPPORTED_VIDEO_FORMATS, SUPPORTED_IMAGE_FORMATS
 
 
 class VideoDatabase:
@@ -33,21 +33,22 @@ class VideoDatabase:
             json.dump(self.dictionary, f, indent=2, ensure_ascii=False)
     
     def _scan_videos(self):
-        """Scan video directories and update dictionary"""
+        """Scan video and image directories and update dictionary"""
         for category, category_dir in CATEGORIES.items():
             if not category_dir.exists():
                 continue
             
-            for video_file in category_dir.iterdir():
-                if video_file.suffix.lower() in SUPPORTED_VIDEO_FORMATS:
-                    word = video_file.stem.upper()
+            for media_file in category_dir.iterdir():
+                if media_file.suffix.lower() in SUPPORTED_VIDEO_FORMATS + SUPPORTED_IMAGE_FORMATS:
+                    word = media_file.stem.upper()
                     
                     if word not in self.dictionary[category]:
                         self.dictionary[category][word] = {
-                            'path': str(video_file),
-                            'filename': video_file.name,
+                            'path': str(media_file),
+                            'filename': media_file.name,
                             'description': f'Sign for {word}',
-                            'category': category
+                            'category': category,
+                            'type': 'video' if media_file.suffix.lower() in SUPPORTED_VIDEO_FORMATS else 'image'
                         }
         
         self._save_dictionary()

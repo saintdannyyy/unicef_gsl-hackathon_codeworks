@@ -158,5 +158,41 @@
     }
   },
   "numbers": {},
-  "words": {}
+  "words": {
+    "CRY": {
+      "path": "C:\\Users\\HP\\Documents\\Hackathon\\Unicef Startup Lab\\codeworks\\wotegslbot\\data\\videos\\words\\cry.png",
+      "filename": "cry.png",
+      "description": "Sign for CRY",
+      "category": "words",
+      "type": "image"
+    },
+    "KISS": {
+      "path": "C:\\Users\\HP\\Documents\\Hackathon\\Unicef Startup Lab\\codeworks\\wotegslbot\\data\\videos\\words\\kiss.png",
+      "filename": "kiss.png",
+      "description": "Sign for KISS",
+      "category": "words",
+      "type": "image"
+    },
+    "LAUGH": {
+      "path": "C:\\Users\\HP\\Documents\\Hackathon\\Unicef Startup Lab\\codeworks\\wotegslbot\\data\\videos\\words\\laugh.png",
+      "filename": "laugh.png",
+      "description": "Sign for LAUGH",
+      "category": "words",
+      "type": "image"
+    },
+    "SPEAK": {
+      "path": "C:\\Users\\HP\\Documents\\Hackathon\\Unicef Startup Lab\\codeworks\\wotegslbot\\data\\videos\\words\\speak.png",
+      "filename": "speak.png",
+      "description": "Sign for SPEAK",
+      "category": "words",
+      "type": "image"
+    },
+    "STAND": {
+      "path": "C:\\Users\\HP\\Documents\\Hackathon\\Unicef Startup Lab\\codeworks\\wotegslbot\\data\\videos\\words\\stand.png",
+      "filename": "stand.png",
+      "description": "Sign for STAND",
+      "category": "words",
+      "type": "image"
+    }
+  }
 }

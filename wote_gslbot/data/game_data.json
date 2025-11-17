@@ -1,0 +1,174 @@
+{
+  "users": {
+    "838093890": {
+      "user_id": 838093890,
+      "username": "aristocratjnr",
+      "first_name": "aristocratjnr🧸||🎈",
+      "total_games": 0,
+      "wins": 0,
+      "total_points": 0,
+      "cultural_mastery": 0,
+      "streak": 0,
+      "achievements": [],
+      "created_at": "2025-11-14T07:07:28.641666",
+      "last_played": null
+    },
+    "1443431993": {
+      "user_id": 1443431993,
+      "username": "saintdannyyy",
+      "first_name": "Saintdannyyy🥶",
+      "total_games": 5,
+      "wins": 5,
+      "total_points": 300,
+      "cultural_mastery": 0,
+      "streak": 5,
+      "achievements": [
+        "first_game",
+        "streak_5"
+      ],
+      "created_at": "2025-11-14T07:08:41.325772",
+      "last_played": "2025-11-14T08:05:02.558297"
+    },
+    "1215010406": {
+      "user_id": 1215010406,
+      "username": "klausnottaken",
+      "first_name": "Klaus",
+      "total_games": 1,
+      "wins": 0,
+      "total_points": 0,
+      "cultural_mastery": 0,
+      "streak": 0,
+      "achievements": [
+        "first_game"
+      ],
+      "created_at": "2025-11-14T07:20:57.212851",
+      "last_played": "2025-11-14T08:05:02.560295"
+    },
+    "8293198097": {
+      "user_id": 8293198097,
+      "username": null,
+      "first_name": "Agnes",
+      "total_games": 0,
+      "wins": 0,
+      "total_points": 0,
+      "cultural_mastery": 0,
+      "streak": 0,
+      "achievements": [],
+      "created_at": "2025-11-14T08:30:23.717562",
+      "last_played": null
+    },
+    "7761686793": {
+      "user_id": 7761686793,
+      "username": null,
+      "first_name": "Burner",
+      "total_games": 1,
+      "wins": 1,
+      "total_points": 200,
+      "cultural_mastery": 0,
+      "streak": 1,
+      "achievements": [
+        "first_game"
+      ],
+      "created_at": "2025-11-14T09:38:10.537371",
+      "last_played": "2025-11-14T09:48:01.130138"
+    }
+  },
+  "leaderboard": [
+    {
+      "user_id": 1443431993,
+      "username": "saintdannyyy",
+      "first_name": "Saintdannyyy🥶",
+      "total_points": 300,
+      "wins": 5,
+      "total_games": 5
+    },
+    {
+      "user_id": 7761686793,
+      "username": null,
+      "first_name": "Burner",
+      "total_points": 200,
+      "wins": 1,
+      "total_games": 1
+    },
+    {
+      "user_id": 838093890,
+      "username": "aristocratjnr",
+      "first_name": "aristocratjnr🧸||🎈",
+      "total_points": 0,
+      "wins": 0,
+      "total_games": 0
+    },
+    {
+      "user_id": 1215010406,
+      "username": "klausnottaken",
+      "first_name": "Klaus",
+      "total_points": 0,
+      "wins": 0,
+      "total_games": 1
+    },
+    {
+      "user_id": 8293198097,
+      "username": null,
+      "first_name": "Agnes",
+      "total_points": 0,
+      "wins": 0,
+      "total_games": 0
+    }
+  ],
+  "game_history": [
+    {
+      "room_id": "room_1763104153_1443431993",
+      "game_mode": "quick_match",
+      "players": [
+        1443431993
+      ],
+      "scores": {
+        "1443431993": 0
+      },
+      "winner_id": 1443431993,
+      "winner_score": 0,
+      "played_at": "2025-11-14T07:09:21.589566"
+    },
+    {
+      "room_id": "room_1763106435_1443431993",
+      "game_mode": "quick_match",
+      "players": [
+        1443431993
+      ],
+      "scores": {
+        "1443431993": 0
+      },
+      "winner_id": 1443431993,
+      "winner_score": 0,
+      "played_at": "2025-11-14T07:47:29.277830"
+    },
+    {
+      "room_id": "room_1763106822_1443431993",
+      "game_mode": "quick_match",
+      "players": [
+        1443431993
+      ],
+      "scores": {
+        "1443431993": 0
+      },
+      "winner_id": 1443431993,
+      "winner_score": 0,
+      "played_at": "2025-11-14T07:53:44.546157"
+    },
+    {
+      "room_id": "room_1002",
+      "game_mode": "activities",
+      "players": [
+        1443431993,
+        1215010406
+      ],
+      "scores": {
+        "1443431993": 0,
+        "1215010406": 0
+      },
+      "winner_id": 1443431993,
+      "winner_score": 0,
+      "played_at": "2025-11-14T08:05:02.561320"
+    }
+  ]
+}

@@ -1,0 +1,233 @@
+{
+  "proverbs": [
+    {
+      "akan": "Sɛ wonim dwuma a, na wonim ne bo",
+      "english": "If you know the work, you know its value",
+      "signs": [
+        "WORK",
+        "KNOW",
+        "VALUE"
+      ],
+      "lesson": "Understanding through experience"
+    },
+    {
+      "akan": "Obi nkyere abofra Nyame",
+      "english": "No one teaches a child about God",
+      "signs": [
+        "CHILD",
+        "TEACH",
+        "GOD"
+      ],
+      "lesson": "Innate knowledge and spirituality"
+    },
+    {
+      "akan": "Woforo dua pa a, na yepia wo",
+      "english": "If you climb a good tree, we support you",
+      "signs": [
+        "CLIMB",
+        "GOOD",
+        "SUPPORT"
+      ],
+      "lesson": "Community support for good endeavors"
+    },
+    {
+      "akan": "Abofra bo abe, na ommo Nyame",
+      "english": "A child breaks a palm fruit, not God",
+      "signs": [
+        "CHILD",
+        "BREAK",
+        "FRUIT"
+      ],
+      "lesson": "Take responsibility for your actions"
+    },
+    {
+      "akan": "Yɛnni nkɔhɔɔ berɛ yi, yɛdi kanea",
+      "english": "We don't go by moonlight today, we go by lamp",
+      "signs": [
+        "LIGHT",
+        "TODAY",
+        "NEW"
+      ],
+      "lesson": "Adapting to modern times while respecting tradition"
+    }
+  ],
+  "cultural_concepts": [
+    {
+      "name": "Sankofa",
+      "symbol": "🦅",
+      "meaning": "Go back and fetch it - learning from the past",
+      "signs": [
+        "PAST",
+        "LEARN",
+        "REMEMBER"
+      ],
+      "explanation": "The Sankofa bird looks backward while moving forward"
+    },
+    {
+      "name": "Akwaaba",
+      "symbol": "🙏",
+      "meaning": "Welcome",
+      "signs": [
+        "WELCOME",
+        "FRIEND",
+        "COME"
+      ],
+      "explanation": "Traditional Ghanaian greeting expressing hospitality"
+    },
+    {
+      "name": "Adinkra Symbols",
+      "symbol": "🎨",
+      "meaning": "Visual symbols representing concepts and proverbs",
+      "signs": [
+        "ART",
+        "MEANING",
+        "WISDOM"
+      ],
+      "explanation": "Akan symbols used in fabrics and pottery"
+    },
+    {
+      "name": "Ubuntu",
+      "symbol": "🤝",
+      "meaning": "I am because we are - communal unity",
+      "signs": [
+        "TOGETHER",
+        "COMMUNITY",
+        "UNITY"
+      ],
+      "explanation": "Philosophy of human interconnectedness"
+    },
+    {
+      "name": "Enstoolment",
+      "symbol": "👑",
+      "meaning": "Traditional chief installation ceremony",
+      "signs": [
+        "CHIEF",
+        "TRADITION",
+        "RESPECT"
+      ],
+      "explanation": "Sacred ceremony conferring chieftaincy"
+    }
+  ],
+  "greetings": [
+    {
+      "akan": "Maakye",
+      "english": "Good morning",
+      "signs": [
+        "MORNING",
+        "GOOD"
+      ]
+    },
+    {
+      "akan": "Maaha",
+      "english": "Good afternoon",
+      "signs": [
+        "AFTERNOON",
+        "GOOD"
+      ]
+    },
+    {
+      "akan": "Maadwo",
+      "english": "Good evening",
+      "signs": [
+        "EVENING",
+        "GOOD"
+      ]
+    },
+    {
+      "akan": "Ɛte sɛn?",
+      "english": "How are you?",
+      "signs": [
+        "HOW",
+        "YOU"
+      ]
+    },
+    {
+      "akan": "Me ho yɛ",
+      "english": "I am fine",
+      "signs": [
+        "I",
+        "FINE"
+      ]
+    }
+  ],
+  "common_phrases": [
+    {
+      "akan": "Medaase",
+      "english": "Thank you",
+      "signs": [
+        "THANK",
+        "YOU"
+      ]
+    },
+    {
+      "akan": "Mepaakyɛw",
+      "english": "Please",
+      "signs": [
+        "PLEASE"
+      ]
+    },
+    {
+      "akan": "Kosɛ",
+      "english": "Sorry/Excuse me",
+      "signs": [
+        "SORRY"
+      ]
+    },
+    {
+      "akan": "Yoo",
+      "english": "Yes/Okay",
+      "signs": [
+        "YES"
+      ]
+    },
+    {
+      "akan": "Daabi",
+      "english": "No",
+      "signs": [
+        "NO"
+      ]
+    }
+  ],
+  "food_culture": [
+    {
+      "name": "Fufu",
+      "description": "Pounded cassava and plantain",
+      "signs": [
+        "FOOD",
+        "TRADITIONAL"
+      ]
+    },
+    {
+      "name": "Banku",
+      "description": "Fermented corn dough",
+      "signs": [
+        "FOOD",
+        "CORN"
+      ]
+    },
+    {
+      "name": "Kenkey",
+      "description": "Fermented corn dumpling",
+      "signs": [
+        "FOOD",
+        "WRAPPED"
+      ]
+    },
+    {
+      "name": "Waakye",
+      "description": "Rice and beans",
+      "signs": [
+        "RICE",
+        "BEANS"
+      ]
+    },
+    {
+      "name": "Kelewele",
+      "description": "Spicy fried plantain",
+      "signs": [
+        "PLANTAIN",
+        "SPICY"
+      ]
+    }
+  ]
+}

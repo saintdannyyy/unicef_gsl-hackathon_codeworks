@@ -7,12 +7,14 @@
 ## Key Features
 
 ✨ **Telegram Bot** (`wote_gslbot/`)
+
 - Solo practice mode (3-question quick quizzes with instant feedback)
 - 2-player synchronized multiplayer matches with real-time leaderboard
 - Integrated GSL dictionary with 100+ signs
 - Works via polling (easy demo setup) or webhooks
 
 🌐 **Web Frontend** (`wote_web/` — React + TypeScript)
+
 - Learn module with structured lessons (alphabets, numbers, common words)
 - Practice modes (quiz, freestyle, challenge)
 - Live webcam sign detection using MediaPipe + TensorFlow.js
@@ -20,12 +22,14 @@
 - Mock detection mode for reliable demos
 
 🤖 **ML Training Pipeline** (`model_training/`)
+
 - Browser-based data collection UI for landmark annotation
 - Hybrid neural network training (dense + sequence models)
 - Export to TensorFlow.js for browser inference
 - Dataset analysis and quality validation tools
 
 📱 **Supports Multiple Media Formats**
+
 - Videos: `.mp4`, `.mov`, `.avi`
 - Images: `.png`, `.jpg`, `.jpeg`
 
@@ -108,7 +112,7 @@ codeworks/
 ### 1. Clone with Submodules
 
 ```bash
-git clone https://github.com/saintdannyyy/pre-unicef_gsl-hackathon_codeworks.git
+git clone https://github.com/saintdannyyy/Unicef-Startup-Lab-Hackathon
 cd codeworks
 git submodule update --init --recursive
 ```
@@ -180,11 +184,13 @@ Then expose with ngrok and set the webhook URL in Telegram BotFather settings.
 **Game Modes:**
 
 1. **Solo Practice** — 3-question quick quiz
+
    - Random questions from dictionary
    - Instant feedback (correct/incorrect)
    - Score tracking
 
 2. **Multiplayer (2-Player)** — Synchronized 5-question match
+
    - Create room with friend
    - Both answer same questions simultaneously
    - Speed + accuracy scoring
@@ -207,15 +213,15 @@ Then expose with ngrok and set the webhook URL in Telegram BotFather settings.
 
 **Pages:**
 
-| Page | Purpose | Features |
-|------|---------|----------|
-| Home | Landing page | Intro, quick links to Learn/Practice |
-| Learn | Lesson browser | Categories (alphabets, numbers, words) with progress |
-| Lesson | Video viewer | Individual signs with video playback + detector |
-| Practice | Mode selector | Quiz, Freestyle, Challenge modes |
-| PracticeEnhanced | Quiz UI | Live feedback, score tracking, star rewards |
-| PracticeComplete | Results screen | Score summary, retry/home buttons |
-| Translate | Dictionary | Search signs, filter by category |
+| Page             | Purpose        | Features                                             |
+| ---------------- | -------------- | ---------------------------------------------------- |
+| Home             | Landing page   | Intro, quick links to Learn/Practice                 |
+| Learn            | Lesson browser | Categories (alphabets, numbers, words) with progress |
+| Lesson           | Video viewer   | Individual signs with video playback + detector      |
+| Practice         | Mode selector  | Quiz, Freestyle, Challenge modes                     |
+| PracticeEnhanced | Quiz UI        | Live feedback, score tracking, star rewards          |
+| PracticeComplete | Results screen | Score summary, retry/home buttons                    |
+| Translate        | Dictionary     | Search signs, filter by category                     |
 
 **Sign Detection:**
 
@@ -244,6 +250,7 @@ Then expose with ngrok and set the webhook URL in Telegram BotFather settings.
 ### Adding New Signs
 
 1. **For Bot Dictionary:**
+
    - Add video/image file to `wote_gslbot/data/videos/words/`
    - Name by sign meaning (e.g., `HELLO.mp4`, `GOODBYE.png`)
    - Update `wote_gslbot/data/dictionary.json` with metadata
@@ -287,14 +294,14 @@ Format:
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| `TELEGRAM_BOT_TOKEN not set` | Set env var: `$env:TELEGRAM_BOT_TOKEN="..."` or add to `.env` |
-| `Conflict: terminated by other getUpdates` | Close other Telegram clients (Desktop/Web) using same token |
-| `MediaPipe wasm errors` | Enable mock detection mode in `WebcamDetector.tsx` or pin `@mediapipe/hands` version |
-| `Not enough words` | Add ≥4 media files to `wote_gslbot/data/videos/words/` |
-| Frontend won't connect to bot | Ensure bot is running on localhost, check CORS settings |
-| Model inference slow | Use mock detection or optimize model in `model_training/` |
+| Issue                                      | Solution                                                                             |
+| ------------------------------------------ | ------------------------------------------------------------------------------------ |
+| `TELEGRAM_BOT_TOKEN not set`               | Set env var: `$env:TELEGRAM_BOT_TOKEN="..."` or add to `.env`                        |
+| `Conflict: terminated by other getUpdates` | Close other Telegram clients (Desktop/Web) using same token                          |
+| `MediaPipe wasm errors`                    | Enable mock detection mode in `WebcamDetector.tsx` or pin `@mediapipe/hands` version |
+| `Not enough words`                         | Add ≥4 media files to `wote_gslbot/data/videos/words/`                               |
+| Frontend won't connect to bot              | Ensure bot is running on localhost, check CORS settings                              |
+| Model inference slow                       | Use mock detection or optimize model in `model_training/`                            |
 
 ## Demo Checklist
 
@@ -352,15 +359,18 @@ POST /api/detect     — Sign detection (if API enabled)
 We welcome contributions! Here's how:
 
 1. **Add signs to dictionary:**
+
    - Add media to `wote_gslbot/data/videos/words/`
    - Update `wote_gslbot/data/dictionary.json`
 
 2. **Improve models:**
+
    - Collect data using `model_training/collect/`
    - Train with `model_training/train_hybrid_model.py`
    - Export with `model_training/export_manual.py`
 
 3. **Frontend features:**
+
    - Work in `wote_web/` submodule
    - Follow React/TypeScript conventions
    - Submit PR to `lordofcodess/sign_language`
@@ -428,6 +438,40 @@ MIT — See LICENSE file or [opensource.org/licenses/MIT](https://opensource.org
 
 ## Acknowledgements
 
+## Presentation & Demo Videos
+
+### 🎬 Bi-Directional Conversation Module
+
+Experience the interactive two-way conversation flow with real-time sign detection and response:
+
+<details>
+<summary><strong>▶ Watch Demo: Bi-directional Conversation (2 min)</strong></summary>
+
+https://github.com/saintdannyyy/pre-unicef_gsl-hackathon_codeworks/assets/videos/Bi-directional_converstaion_module.mp4
+
+</details>
+
+### 📚 Learning Module Demo
+
+Walkthrough of the structured learning experience with lessons, practice modes, and sign detection:
+
+<details>
+<summary><strong>▶ Watch Demo: Learning Module (2 min)</strong></summary>
+
+https://github.com/saintdannyyy/pre-unicef_gsl-hackathon_codeworks/assets/videos/Learning_module.mp4
+
+</details>
+
+### 📊 Presentation Slides
+
+Complete presentation used for UNICEF Startup Lab judges:
+
+- **📄 [TWILIGHT Presentation](./docs/TWILIGHT.pptx)** — Download and view (PowerPoint format)
+
+---
+
+## Acknowledgements
+
 - **UNICEF Startup Lab** — 3rd Place, Best AI Implementation Award
 - **MediaPipe & TensorFlow.js** — Sign detection frameworks
 - **python-telegram-bot** — Bot framework
@@ -443,4 +487,5 @@ MIT — See LICENSE file or [opensource.org/licenses/MIT](https://opensource.org
 ---
 
 **Last Updated:** November 2025  
-**Repository:** [github.com/saintdannyyy/pre-unicef_gsl-hackathon_codeworks](https://github.com/saintdannyyy/pre-unicef_gsl-hackathon_codeworks)
+**Repository:** [github.com/saintdannyyy/pre-unicef_gsl-hackathon_codeworks](https://github.com/saintdannyyy/pre-unicef_gsl-hackathon_codeworks)  
+**Award:** UNICEF Startup Lab 🏆 3rd Place | Best AI Implementation

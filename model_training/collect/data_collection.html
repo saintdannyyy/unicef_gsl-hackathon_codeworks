@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>GSL Data Collection - Improved</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .video-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        video,
+        canvas {
+            border: 3px solid #333;
+            border-radius: 8px;
+            max-width: 640px;
+            width: 100%;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        input,
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+
+        button {
+            background: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #218838;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .stats {
+            margin: 15px 0;
+            padding: 15px;
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            border-radius: 4px;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+
+        .hand-guide {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            height: 500px;
+            border: 3px dashed #28a745;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        .quality-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+
+        .quality-good {
+            background: rgba(40, 167, 69, 0.9);
+        }
+
+        .quality-medium {
+            background: rgba(255, 193, 7, 0.9);
+        }
+
+        .quality-poor {
+            background: rgba(220, 53, 69, 0.9);
+        }
+
+        .recording-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 10px 20px;
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+            border-radius: 6px;
+            font-weight: bold;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🇬🇭 GSL Data Collection - Enhanced</h1>
+
+        <div class="warning">
+            <h3>📋 Collection Tips for Better Accuracy:</h3>
+            <ul>
+                <li><strong>Good lighting:</strong> face a window or light source (CRITICAL!)</li>
+                <li><strong>Plain background:</strong> avoid busy/patterned backgrounds</li>
+                <li><strong>Contrast:</strong> wear dark clothes if background is light (or vice versa)</li>
+                <li><strong>For face-touching signs:</strong> move hand slower, keep fingers spread</li>
+                <li><strong>Distance:</strong> sit 1-2 feet from camera, show full hand</li>
+                <li><strong>Hold steady</strong> for 1-2 seconds for static signs</li>
+                <li><strong>Perform full motion</strong> slowly for dynamic signs (J, Z)</li>
+                <li><strong>Collect 40-50 samples</strong> per sign for best results</li>
+            </ul>
+        </div>
+
+        <div class="stats" style="background: #ffe7e7; border-left: 4px solid #dc3545;">
+            <strong>🚨 Hand Not Detected? Try This:</strong><br>
+            1. Improve lighting (turn on lights, face window)<br>
+            2. Move hand away from face slightly<br>
+            3. Spread fingers apart more<br>
+            4. Use plain background<br>
+            5. Move hand slower (not too fast)<br>
+            6. Try wearing different colored sleeves
+        </div>
+
+        <div class="controls">
+            <label><strong>Sign Label:</strong></label>
+            <input type="text" id="labelInput" placeholder="e.g., A, B, Z" maxlength="10">
+
+            <label style="margin-left: 20px;">
+                <input type="checkbox" id="isSequence">
+                Dynamic sign (has movement)
+            </label>
+
+            <br><br>
+
+            <button id="startBtn" onclick="startCamera()">📹 Start Camera</button>
+            <button id="recordBtn" onclick="recordSample()" disabled>🎯 Record Sample</button>
+            <button id="downloadBtn" onclick="downloadData()" disabled>💾 Download Data</button>
+
+            <button onclick="clearData()" style="background: #dc3545; margin-left: 20px;">🗑️ Clear All</button>
+        </div>
+
+        <div class="video-container">
+            <video id="webcam" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+            <div class="hand-guide"></div>
+            <div id="qualityIndicator" class="quality-indicator" style="display:none;">Quality: ?</div>
+            <div id="recordingIndicator" class="recording-indicator" style="display:none;">🔴 RECORDING</div>
+        </div>
+
+        <div id="stats" class="stats">
+            <strong>Collected Samples:</strong> <span id="sampleCount">0</span>
+            <br>
+            <strong>Current Label:</strong> <span id="currentLabel">-</span>
+            <br>
+            <strong>Hand Detected:</strong> <span id="handStatus">❌ No</span>
+            <br>
+            <strong>Sample Quality:</strong> <span id="qualityText">-</span>
+        </div>
+
+        <div id="classStats" style="margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        let hands, camera;
+        let currentLandmarks = null;
+        let previousLandmarks = null; // For motion tracking
+        let sequenceBuffer = [];
+        const samples = {};
+        let isRecording = false;
+        let recordingStartTime = 0;
+        const SEQUENCE_DURATION = 3000; // 3 seconds optimal for motion capture (was 10s)
+
+        function startCamera() {
+            const video = document.getElementById('webcam');
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            hands = new Hands({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+            });
+
+            hands.setOptions({
+                maxNumHands: 2,
+                modelComplexity: 1,  // 0=lite, 1=full (balance speed/accuracy)
+                minDetectionConfidence: 0.4,  // Optimized for face-touching signs (was 0.5)
+                minTrackingConfidence: 0.3,   // Very low for continuous tracking during occlusion
+                staticImageMode: false,       // Better for video tracking
+                selfieMode: false            // No mirror mode (better for training data)
+            });
+
+            hands.onResults(onResults);
+
+            camera = new Camera(video, {
+                onFrame: async () => {
+                    await hands.send({ image: video });
+                },
+                width: 800,
+                height: 700
+            });
+
+            camera.start();
+
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('recordBtn').disabled = false;
+            document.getElementById('labelInput').focus();
+        }
+
+        function onResults(results) {
+            const canvas = document.getElementById('canvas');
+            const video = document.getElementById('webcam');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+
+            const qualityIndicator = document.getElementById('qualityIndicator');
+            const handStatus = document.getElementById('handStatus');
+            const qualityText = document.getElementById('qualityText');
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                // Draw ALL detected hands
+                results.multiHandLandmarks.forEach((landmarks, index) => {
+                    const color = index === 0 ? '#00FF00' : '#00FFFF'; // Green for first, Cyan for second
+                    drawConnectors(ctx, landmarks, HAND_CONNECTIONS, { color: color, lineWidth: 3 });
+                    drawLandmarks(ctx, landmarks, { color: '#FF0000', lineWidth: 2, radius: 5 });
+                });
+
+                // Use first hand for quality calculation
+                const landmarks = results.multiHandLandmarks[0];
+                currentLandmarks = results.multiHandLandmarks; // Store ALL hands
+
+                // Calculate quality
+                const quality = calculateQuality(landmarks);
+
+                qualityIndicator.style.display = 'block';
+                if (quality > 0.6) {  // Was 0.8, now 0.6 - easier to achieve!
+                    qualityIndicator.className = 'quality-indicator quality-good';
+                    qualityIndicator.textContent = '✅ Excellent';
+                    qualityText.textContent = '✅ Excellent - Ready to record';
+                    qualityText.style.color = '#28a745';
+                } else if (quality > 0.35) {  // Was 0.5, now 0.35
+                    qualityIndicator.className = 'quality-indicator quality-medium';
+                    qualityIndicator.textContent = '⚠️ Good';
+                    qualityText.textContent = '⚠️ Good - Try to center hand more';
+                    qualityText.style.color = '#ffc107';
+                } else {
+                    qualityIndicator.className = 'quality-indicator quality-poor';
+                    qualityIndicator.textContent = '❌ Poor';
+                    qualityText.textContent = '❌ Poor - Adjust position';
+                    qualityText.style.color = '#dc3545';
+                }
+
+                const handCount = results.multiHandLandmarks.length;
+                handStatus.textContent = `✅ Yes (${handCount} hand${handCount > 1 ? 's' : ''})`;
+                handStatus.style.color = '#28a745';
+
+                // If recording sequence
+                if (isRecording && document.getElementById('isSequence').checked) {
+                    // Flatten all hands
+                    const allHandsFlat = results.multiHandLandmarks.map(h => flattenLandmarks(h)).flat();
+                    sequenceBuffer.push(allHandsFlat);
+
+                    const elapsed = Date.now() - recordingStartTime;
+                    if (elapsed >= SEQUENCE_DURATION) {
+                        finishRecording();
+                    }
+                }
+
+            } else {
+                currentLandmarks = null;
+                qualityIndicator.style.display = 'none';
+                handStatus.textContent = '❌ No';
+                handStatus.style.color = '#dc3545';
+                qualityText.textContent = 'No hand detected';
+                qualityText.style.color = '#666';
+            }
+        }
+
+        function calculateQuality(landmarks) {
+            // Industry-standard quality metrics
+
+            // 1. Visibility score (all 21 landmarks detected clearly)
+            const visibilityScore = landmarks.filter(p =>
+                (p.visibility === undefined || p.visibility > 0.5)
+            ).length / 21;
+
+            // 2. Finger spread score (fingers not clenched - easier detection)
+            const fingerTips = [4, 8, 12, 16, 20]; // Thumb, index, middle, ring, pinky
+            let avgSpread = 0;
+            for (let i = 0; i < fingerTips.length - 1; i++) {
+                const p1 = landmarks[fingerTips[i]];
+                const p2 = landmarks[fingerTips[i + 1]];
+                avgSpread += Math.sqrt(
+                    Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2)
+                );
+            }
+            avgSpread /= (fingerTips.length - 1);
+            const spreadScore = Math.min(avgSpread / 0.15, 1.0); // Normalize
+
+            // 3. Depth score (hand not too far from camera)
+            const avgZ = landmarks.reduce((sum, pt) => sum + Math.abs(pt.z), 0) / landmarks.length;
+            const depthScore = Math.max(0, 1 - avgZ);
+
+            // 4. Motion smoothness (reduces jitter artifacts)
+            let smoothnessScore = 1.0;
+            if (previousLandmarks) {
+                let totalMovement = 0;
+                for (let i = 0; i < 21; i++) {
+                    totalMovement += Math.sqrt(
+                        Math.pow(landmarks[i].x - previousLandmarks[i].x, 2) +
+                        Math.pow(landmarks[i].y - previousLandmarks[i].y, 2)
+                    );
+                }
+                // Penalize excessive jitter (>0.1 avg movement per landmark)
+                smoothnessScore = totalMovement > 2.1 ? 0.5 : 1.0;
+            }
+
+            // Store for next frame comparison
+            previousLandmarks = landmarks;
+
+            // Weighted combination (industry standard)
+            return (
+                visibilityScore * 0.35 +   // Most important: all landmarks visible
+                spreadScore * 0.25 +       // Spread fingers = better detection
+                depthScore * 0.25 +        // Reasonable distance from camera
+                smoothnessScore * 0.15     // No excessive jitter
+            );
+        }
+
+        function flattenLandmarks(landmarks) {
+            const flat = [];
+            for (let i = 0; i < 21; i++) {
+                flat.push(landmarks[i].x, landmarks[i].y, landmarks[i].z);
+            }
+            return flat;
+        }
+
+        function recordSample() {
+            const label = document.getElementById('labelInput').value.trim().toUpperCase();
+            const isSequence = document.getElementById('isSequence').checked;
+
+            if (!label) {
+                alert('Please enter a label!');
+                return;
+            }
+
+            if (!currentLandmarks && !isSequence) {
+                alert('No hand detected! Please show your hand to the camera.');
+                return;
+            }
+
+            if (isSequence) {
+                // Start recording sequence
+                isRecording = true;
+                recordingStartTime = Date.now();
+                sequenceBuffer = [];
+                document.getElementById('recordingIndicator').style.display = 'block';
+                document.getElementById('recordBtn').disabled = true;
+                return;
+            }
+
+            // Static sign - capture single frame (all hands)
+            const allHandsFlat = currentLandmarks.map(h => flattenLandmarks(h)).flat();
+
+            if (!samples[label]) {
+                samples[label] = [];
+            }
+
+            samples[label].push({ landmarks: allHandsFlat });
+
+            document.getElementById('currentLabel').textContent = label;
+            updateStats();
+
+            // Visual feedback
+            document.getElementById('recordBtn').style.background = '#28a745';
+            setTimeout(() => {
+                document.getElementById('recordBtn').style.background = '#007bff';
+            }, 200);
+        }
+
+        function finishRecording() {
+            const label = document.getElementById('labelInput').value.trim().toUpperCase();
+
+            if (sequenceBuffer.length < 10) {
+                alert('Sequence too short! Try again and perform the full motion.');
+                isRecording = false;
+                sequenceBuffer = [];
+                document.getElementById('recordingIndicator').style.display = 'none';
+                document.getElementById('recordBtn').disabled = false;
+                return;
+            }
+
+            const seqLabel = `${label}_seq`;
+            if (!samples[seqLabel]) {
+                samples[seqLabel] = [];
+            }
+
+            samples[seqLabel].push({ sequence: sequenceBuffer });
+
+            isRecording = false;
+            sequenceBuffer = [];
+            document.getElementById('recordingIndicator').style.display = 'none';
+            document.getElementById('recordBtn').disabled = false;
+            document.getElementById('currentLabel').textContent = seqLabel;
+
+            updateStats();
+        }
+
+        function updateStats() {
+            const total = Object.values(samples).reduce((sum, arr) => sum + arr.length, 0);
+            document.getElementById('sampleCount').textContent = total;
+            document.getElementById('downloadBtn').disabled = total === 0;
+
+            // Show per-class stats
+            let statsHTML = '<div class="stats"><strong>Samples by Class:</strong><br>';
+            Object.keys(samples).sort().forEach(label => {
+                const count = samples[label].length;
+                const bar = '█'.repeat(Math.min(count, 50));
+                const status = count >= 40 ? '✅' : count >= 20 ? '⚠️' : '❌';
+                statsHTML += `${status} ${label}: ${count} ${bar}<br>`;
+            });
+            statsHTML += '</div>';
+            document.getElementById('classStats').innerHTML = statsHTML;
+        }
+
+        function downloadData() {
+            Object.keys(samples).forEach(label => {
+                const lines = samples[label].map(s => JSON.stringify(s)).join('\n');
+                const blob = new Blob([lines], { type: 'application/jsonl' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${label}.jsonl`;
+                a.click();
+            });
+
+            alert(`Downloaded ${Object.keys(samples).length} files!`);
+        }
+
+        function clearData() {
+            if (confirm('Clear all collected data?')) {
+                Object.keys(samples).forEach(key => delete samples[key]);
+                updateStats();
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !document.getElementById('recordBtn').disabled) {
+                recordSample();
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,3 @@
+[submodule "wote_web"]
+	path = wote_web
+	url = https://github.com/lordofcodess/sign_language.git
